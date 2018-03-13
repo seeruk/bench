@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/rand"
 	"sync"
-	"time"
 )
 
 func Source(ctx context.Context, n int) (context.Context, chan int) {
@@ -20,7 +19,7 @@ func Source(ctx context.Context, n int) (context.Context, chan int) {
 			n := randBetween(0, math.MaxInt16)
 			log.Printf("Made %d: %d", i, n)
 			is <- n
-			time.Sleep(2 * time.Millisecond)
+			//time.Sleep(2 * time.Millisecond)
 		}
 
 		close(is)
@@ -57,28 +56,26 @@ func SquareTransformBatchLong(ctx context.Context, in chan int) (context.Context
 	}()
 
 	go func() {
+		defer close(source)
+
 		first := true
 
-		for {
+		for i := range in {
 			select {
 			case <-ctx.Done():
 				return
-			case i, ok := <-in:
-				if !ok {
-					close(source)
-					return
-				}
-
-				if first {
-					// Make a new context, it'd come from the span really.
-					log.Println("Starting the real work now.")
-
-					ctxc <- ctx
-					first = false
-				}
-
-				source <- i
+			default:
 			}
+
+			if first {
+				// Make a new context, it'd come from the span really.
+				log.Println("Starting the real work now.")
+
+				ctxc <- ctx
+				first = false
+			}
+
+			source <- i
 		}
 	}()
 
@@ -86,32 +83,19 @@ func SquareTransformBatchLong(ctx context.Context, in chan int) (context.Context
 }
 
 func SquareTransformLong(ctx context.Context, n int, in chan int) (context.Context, chan int) {
-	log.Printf("SquareTransformLong %d: Started\n", n)
-
 	out := make(chan int)
-
-	var c int
 
 	go func() {
 		defer close(out)
 
-		for {
-			c++
-
+		for i := range in {
 			select {
 			case <-ctx.Done():
 				return
-			case i, ok := <-in:
-				if !ok {
-					return
-				}
-
-				log.Printf("SquareTransformLong %d: %d: %d\n", n, c, i)
-
-				time.Sleep(time.Duration(randBetween(500, 1000)) * time.Nanosecond)
-
-				out <- i * i
+			default:
 			}
+
+			out <- i * i
 		}
 	}()
 
