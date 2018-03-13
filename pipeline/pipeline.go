@@ -56,24 +56,18 @@ func SquareTransformBatchLong(ctx context.Context, in chan int) (context.Context
 	}()
 
 	go func() {
+		var once sync.Once
 		defer close(source)
-
-		first := true
-
 		for i := range in {
-			select {
-			case <-ctx.Done():
+			if ctxIsDone(ctx) {
 				return
-			default:
 			}
 
-			if first {
+			once.Do(func() {
 				// Make a new context, it'd come from the span really.
 				log.Println("Starting the real work now.")
-
 				ctxc <- ctx
-				first = false
-			}
+			})
 
 			source <- i
 		}
@@ -87,12 +81,9 @@ func SquareTransformLong(ctx context.Context, n int, in chan int) (context.Conte
 
 	go func() {
 		defer close(out)
-
 		for i := range in {
-			select {
-			case <-ctx.Done():
+			if ctxIsDone(ctx) {
 				return
-			default:
 			}
 
 			out <- i * i
@@ -149,6 +140,15 @@ func SinkLong(ctx context.Context, in <-chan int) {
 
 			log.Printf("End result %d: %d\n", c, i)
 		}
+	}
+}
+
+func ctxIsDone(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
 	}
 }
 
