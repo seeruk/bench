@@ -18,10 +18,14 @@ func BenchmarkReading4MFile(b *testing.B) {
 			b.Error(err)
 		}
 
-		bs, err = ioutil.ReadAll(io.LimitReader(file, 2194000))
+        //bs, err = ioutil.ReadAll(io.LimitReader(file, 4194000))
+        bs, err = ioutil.ReadAll(io.LimitReader(file, 128))
 		if err != nil {
+            file.Close()
 			b.Error(err)
 		}
+
+        file.Close()
 	}
 
 	b.Log(string(bs))
