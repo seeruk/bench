@@ -5,7 +5,7 @@ const hrtime = process.hrtime;
 let hrstart = hrtime();
 
 for (let i = 0; i < 5000000; i++) {
-    const lexer = gqllanguage.createLexer(new gqllanguage.Source("query 0.001 foo { name model foo bar baz qux }"), {});
+    const lexer = gqllanguage.createLexer(new gqllanguage.Source("query \"\u4e16\" 0.001 foo { name model foo bar baz qux }"), {});
 
     do {
         let foo = lexer.token;
